@@ -34,7 +34,7 @@
 
 1. **Κλωνοποίηση ή download του project**
    ```bash
-   cd conflict_monitor
+   cd conflictmonitor
    ```
 
 2. **Δημιουργία virtual environment (προαιρετικό αλλά συνιστάται)**
