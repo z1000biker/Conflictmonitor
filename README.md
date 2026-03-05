@@ -1,3 +1,202 @@
+# 🌍 Global Conflict Monitor
+### Real-Time Conflict Monitoring System
+
+A system for **monitoring global conflicts in real time**, using data from multiple reliable sources.
+
+---
+
+# 📖 Description
+
+This application **collects and visualizes data about active conflicts worldwide** from several sources:
+
+- 🌐 **GDELT Project** – Global Database of Events, Language, and Tone  
+- ⚔️ **ACLED** – Armed Conflict Location & Event Data Project  
+- 📰 **News API** – Real-time news articles  
+- 🎓 **UCDP (Uppsala Conflict Data Program)** – Conflict research database  
+- 🏥 **UN OCHA / UNHCR** – Humanitarian crisis data  
+
+The system aggregates these sources and displays conflicts and related statistics on an **interactive global map**.
+
+---
+
+# 🚀 Features
+
+- 🔴 **Real-time updates** using WebSockets  
+- 🗺️ **Interactive map** powered by Leaflet  
+- 🔗 **Multiple data sources combined**
+- 🚨 **Threat level classification**
+  - 🔴 Critical
+  - 🟠 High
+  - 🟡 Medium
+  - 🟢 Low
+
+- 📊 **Conflict statistics**
+  - Active conflicts
+  - Casualties
+  - Displaced people
+
+- 🌐 **Geopolitical relationship lines**
+  - Proxy wars
+  - Arms flows
+  - Alliances
+
+- 🖥️ **Dark Palantir-style interface**
+- 🔄 **Automatic data collection every 5 minutes**
+- 💾 **SQLite database** for historical data storage
+
+---
+
+# ⚙️ Installation
+
+## Requirements
+
+- 🐍 Python **3.8+**
+- 📦 pip (Python package manager)
+
+---
+
+## Installation Steps
+
+### 1️⃣ Clone the repository
+
+```bash
+git clone https://github.com/z1000biker/Conflictmonitor.git
+cd Conflictmonitor
+2️⃣ Create a virtual environment (recommended)
+python -m venv venv
+
+Activate it:
+
+Windows
+
+venv\Scripts\activate
+
+Linux / Mac
+
+source venv/bin/activate
+3️⃣ Install dependencies
+pip install -r requirements.txt
+4️⃣ Configure API Keys (Optional)
+
+Open:
+
+data_collectors.py
+
+Add your News API key:
+
+self.news_api_key = "YOUR_NEWS_API_KEY"
+
+Get one here:
+
+🌐 https://newsapi.org/
+
+⚠️ The application can run without API keys using fallback or simulated data.
+
+▶️ Running the Application
+
+Start the server:
+
+python app.py
+
+The application will run at:
+
+http://localhost:5000
+📡 Data Sources
+🌐 GDELT Project
+
+Website: https://www.gdeltproject.org/
+
+Global real-time event database
+
+Automatic data retrieval
+
+No API key required
+
+📰 News API
+
+Website: https://newsapi.org/
+
+News articles from 80,000+ sources
+
+Free plan: 100 requests/day
+
+⚔️ ACLED (Simulated)
+
+Website: https://acleddata.com/
+
+Armed conflict event database
+
+Registration required for full data access
+
+🎓 UCDP (Uppsala Conflict Data Program)
+
+Website: https://ucdp.uu.se/
+
+Academic conflict dataset
+
+Available through API
+
+🎨 User Interface Features
+
+🌙 Dark Mode
+
+🧭 Palantir-inspired visual style
+
+🟦 Animated grid background
+
+🟢 Live monitoring indicator
+
+Threat Level Colors
+Level	Color
+🔴 Critical	Red
+🟠 High	Orange
+🟡 Medium	Yellow
+🟢 Low	Green
+🗺️ Interactive Map
+
+Features:
+
+🔎 Zoom
+
+🖱️ Pan
+
+📍 Clickable conflict markers
+
+📊 Real-time updates
+
+🌍 Global visualization of conflict zones
+
+🧠 How It Works
+
+📡 Data collectors fetch information from multiple sources
+
+🧮 Data is processed and classified by threat level
+
+💾 Results are stored in a SQLite database
+
+🔄 Background tasks update the data every 5 minutes
+
+🗺️ The frontend visualizes the information on the map
+
+🛠️ Tech Stack
+
+🐍 Python
+
+🌐 Flask
+
+🗺️ Leaflet.js
+
+⚡ WebSockets
+
+💾 SQLite
+
+🎨 HTML / CSS / JavaScript
+
+📜 License
+
+This project is provided for educational and research purposes.
+
+
 # 🌍 Παγκόσμιος Χάρτης Συγκρούσεων
 
 **Real-time Conflict Monitoring System** - Σύστημα παρακολούθησης παγκόσμιων συγκρούσεων σε πραγματικό χρόνο με δεδομένα από πολλαπλές αξιόπιστες πηγές.
