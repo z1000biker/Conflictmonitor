@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ΠΑΓΚΟΣΜΙΟΣ ΧΑΡΤΗΣ ΣΥΓΚΡΟΥΣΕΩΝ | INTELLIGENCE</title>
+    
+    <!-- Leaflet for maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Socket.IO for real-time updates -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #0a0e17;
+            --bg-panel: rgba(13, 17, 28, 0.85);
+            --bg-card: rgba(20, 25, 40, 0.6);
+            --accent-primary: #3b82f6;
+            --accent-secondary: #06b6d4;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --critical: #ef4444;
+            --high: #f97316;
+            --medium: #eab308;
+            --low: #22c55e;
+            --border-color: rgba(59, 130, 246, 0.2);
+            --glow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        /* Map Background */
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: #050505;
+        }
+        
+        /* Overlay UI */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: grid;
+            grid-template-columns: 380px 1fr 320px;
+            grid-template-rows: auto 1fr auto;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        /* Enable pointer events for UI elements */
+        .ui-panel {
+            pointer-events: auto;
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Header / Stats Bar */
+        .header-bar {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            height: 80px;
+        }
+        
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .brand-icon {
+            font-size: 24px;
+            color: var(--accent-secondary);
+            text-shadow: var(--glow);
+        }
+        
+        .brand-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .top-stats {
+            display: flex;
+            gap: 24px;
+        }
+        
+        .top-stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 16px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .top-stat-item:last-child {
+            border-right: none;
+        }
+        
+        .top-stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        
+        .top-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .crit-val { color: var(--critical); text-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+        .esc-val { color: var(--high); }
+        .disp-val { color: var(--accent-secondary); }
+        
+        .actions-area {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-icon:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--accent-primary);
+        }
+        
+        /* Sidebar (Left) - Conflicts List */
+        .sidebar-left {
+            grid-column: 1;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            max-height: calc(100vh - 140px);
+        }
+        
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .search-box {
+            position: relative;
+            width: 100%;
+        }
+        
+        .search-input {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 10px 10px 36px;
+            border-radius: 4px;
+            color: white;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        
+        .filter-tabs {
+            display: flex;
+            padding: 12px 16px;
+            gap: 8px;
+            overflow-x: auto;
+        }
+        
+        .filter-tab {
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .filter-tab.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+        
+        .conflicts-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        
+        .conflicts-list::-webkit-scrollbar { width: 4px; }
+        .conflicts-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+        
+        .conflict-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: var(--bg-card);
+            border: 1px solid transparent;
+            border-left: 3px solid var(--text-muted);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .conflict-item:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: var(--accent-primary);
+        }
+        
+        .conflict-item.active {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.1), transparent);
+            border-top: 1px solid var(--accent-primary);
+            border-bottom: 1px solid var(--accent-primary);
+            border-right: 1px solid var(--accent-primary);
+        }
+        
+        .c-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        
+        .c-name {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+        
+        .c-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        /* Threat Classes */
+        .border-critical { border-left-color: var(--critical) !important; }
+        .border-high { border-left-color: var(--high) !important; }
+        .border-medium { border-left-color: var(--medium) !important; }
+        .border-low { border-left-color: var(--low) !important; }
+        
+        /* Right Panel - Details */
+        .details-panel {
+            grid-column: 3;
+            grid-row: 2;
+            display: none; /* Hidden by default until selection */
+            flex-direction: column;
+            animation: slideInRight 0.3s ease;
+        }
+        
+        .details-panel.visible {
+            display: flex;
+        }
+        
+        .details-header {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        .detail-content {
+            padding: 16px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .stat-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        
+        .detail-box {
+            background: rgba(0,0,0,0.2);
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .detail-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        
+        .detail-val {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        /* Legend (Bottom Right) */
+        .map-legend {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 200px;
+            padding: 12px;
+            z-index: 20;
+        }
+        
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+        }
+        
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* Connection Lines */
+        .connection-line {
+            
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="ui-layer">
+        <!-- Top Bar -->
+        <div class="ui-panel header-bar">
+            <div class="brand">
+                <i class="ri-global-line brand-icon"></i>
+                <div class="brand-title">GLOBAL CONFLICT MONITOR</div>
+            </div>
+            
+            <div class="top-stats">
+                <div class="top-stat-item">
+                    <span class="top-stat-value" id="total-conflicts">0</span>
+                    <span class="top-stat-label">ΕΝΕΡΓΕΣ ΖΩΝΕΣ</span>
+                </div>
+                <div class="top-stat-item">
+                    <span class="top-stat-value crit-val" id="critical-conflicts">0</span>
+                    <span class="top-stat-label">ΚΡΙΣΙΜΕΣ</span>
+                </div>
+                <div class="top-stat-item">
+                    <span class="top-stat-value esc-val" id="escalating-conflicts">0</span>
+                    <span class="top-stat-label">ΚΛΙΜΑΚΩΣΗ</span>
+                </div>
+                <div class="top-stat-item">
+                    <span class="top-stat-value disp-val" id="total-displaced">0</span>
+                    <span class="top-stat-label">ΕΚΤΟΠΙΣΜΕΝΟΙ</span>
+                </div>
+            </div>
+            
+            <div class="actions-area">
+                 <div class="top-stat-item" style="border:none">
+                    <span class="top-stat-value" style="font-size: 0.9rem; color: var(--accent-primary);" id="clock">00:00:00</span>
+                    <span class="top-stat-label">UTC TIME</span>
+                </div>
+                <button class="btn-icon" onclick="toggleFullScreen()"><i class="ri-fullscreen-line"></i></button>
+                <button class="btn-icon" onclick="requestUpdate()"><i class="ri-refresh-line"></i></button>
+            </div>
+        </div>
+        
+        <!-- Sidebar Left -->
+        <div class="ui-panel sidebar-left">
+            <div class="sidebar-header">
+                <div class="search-box">
+                    <i class="ri-search-line search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Αναζήτηση περιοχών, συγκρούσεων..." id="search-input">
+                </div>
+            </div>
+            
+            <div class="filter-tabs">
+                <div class="filter-tab active" onclick="filterConflicts('all')">Όλα</div>
+                <div class="filter-tab" onclick="filterConflicts('critical')">Κρίσιμα</div>
+                <div class="filter-tab" onclick="filterConflicts('high')">Υψηλά</div>
+                <div class="filter-tab" onclick="filterConflicts('escalating')">Κλιμάκωση</div>
+            </div>
+            
+            <div class="conflicts-list" id="conflicts-list">
+                <!-- Conflict items rendered here -->
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+                    <i class="ri-loader-4-line ri-spin" style="font-size: 24px;"></i><br>
+                    Φόρτωση δεδομένων...
+                </div>
+            </div>
+        </div>
+        
+        <!-- Details Panel (Right - Initially Hidden) -->
+        <div class="ui-panel details-panel" id="details-panel">
+            <div class="details-header">
+                <h3 style="font-family: 'Orbitron'; font-size: 1.1rem; color: var(--text-main);" id="detail-title">C.O.S.M.O.S. INTEL</h3>
+                <button class="close-btn" onclick="closeDetails()"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="detail-content" id="detail-content">
+                <!-- Dynamic Content -->
+            </div>
+        </div>
+        
+        <!-- Legend Bottom Right -->
+        <div class="ui-panel map-legend">
+            <h4 style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 1px;">THREAT LEVEL</h4>
+            <div class="legend-row">
+                <div class="dot" style="background: var(--critical); box-shadow: 0 0 8px var(--critical);"></div>
+                <span>Κρίσιμη (Critical)</span>
+            </div>
+            <div class="legend-row">
+                <div class="dot" style="background: var(--high);"></div>
+                <span>Υψηλή (High)</span>
+            </div>
+            <div class="legend-row">
+                <div class="dot" style="background: var(--medium);"></div>
+                <span>Μέτρια (Medium)</span>
+            </div>
+            <div class="legend-row">
+                <div class="dot" style="background: var(--low);"></div>
+                <span>Χαμηλή (Low)</span>
+            </div>
+            
+            <h4 style="font-size: 0.7rem; color: var(--text-muted); margin: 12px 0 8px 0; letter-spacing: 1px;">CONNECTIONS</h4>
+            <div class="legend-row">
+                <div style="width: 20px; height: 2px; background: var(--critical); margin-right: 8px;"></div>
+                <span>Proxy War</span>
+            </div>
+            <div class="legend-row">
+                <div style="width: 20px; height: 2px; background: var(--high); margin-right: 8px;"></div>
+                <span>Arms Flow</span>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
